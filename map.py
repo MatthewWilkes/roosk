@@ -21,6 +21,19 @@ def out():
       print ''.join(row)
     im.show()
 
+def territory_id_to_colour(tid, is_marker=False):
+    colour = [130, 120, 0]
+    if is_marker:
+        # this is where we print the id
+        colour[2] = 255
+    tid = str(tid)
+    colour[0] += int(tid[0]) * 10
+    colour[1] += int(tid[2]) * 20
+    return tuple(colour)
+
+def colour_to_territory_id(colour):
+    return ((1+((colour[0]-128)/20))*100) + ((colour[1]-128)/10)
+
 class ComplexMap(object):
     
     def __init__(self, filename):
