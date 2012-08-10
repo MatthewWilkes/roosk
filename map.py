@@ -111,8 +111,8 @@ class ConvertedMap(ComplexMap):
                             next_pixel = simplemap.image.getpixel((x+1,y))
                             if fillpass == 2 and (next_pixel in territory_colours.values()):
                                 # We're not in the sea
-                                tid = inv_territory_colours[next_pixel] * 100
-                                draw.point((x,y), territory_id_to_colour(tid, is_marker=True))
+                                colour = self.image.getpixel((x+1,y))[:2] + (255,)
+                                draw.point((x,y), tuple(colour))
                                 continue
                         draw.point((x,y), colour)
                     elif colour in set([(0, 0, 0), (255, 0, 0)]):
