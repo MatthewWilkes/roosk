@@ -67,7 +67,32 @@ class SimpleMap(object):
         colours.remove((0, 0, 0)) # borders
         colours.remove((255, 255, 255)) # water
         colours.remove((255, 0, 0)) # bridges
-        return enumerate(colours)
+        return dict(enumerate(colours, start=1))
+
+class ConvertedMap(ComplexMap):
+    
+    def __init__(self, simplemap):
+        self.image = Image.new('RGB', simplemap.image.size)
+        draw = ImageDraw.Draw(self.image)
+        territory_colours = simplemap.get_territories()
+        inv_territory_colours = dict([(v,k) for (k,v) in territory_colours.items()])
+        for x in xrange(self.image.size[0]):
+            for y in xrange(self.image.size[1]):
+                colour = simplemap.image.getpixel((x,y))
+                if colour in territory_colours.values():
+                    tid = inv_territory_colours[colour] * 100
+                    draw.point((x,y), territory_id_to_colour(tid))
+                elif colour == (255, 255, 255):
+                    if x < self.image.size[0]-1:
+                        next_pixel = simplemap.image.getpixel((x+1,y))
+                        if next_pixel in territory_colours.values():
+                            # We're not in the sea
+                            tid = inv_territory_colours[next_pixel] * 100
+                            draw.point((x,y), territory_id_to_colour(tid, is_marker=True))
+                            continue
+                    draw.point((x,y), colour)
+                elif colour in set([(0, 0, 0), (255, 0, 0)]):
+                    draw.point((x,y), colour)
 
 if __name__ == '__main__':
     print dict(SimpleMap("/Users/matthewwilkes/Desktop/mars.bmp").get_territories())
