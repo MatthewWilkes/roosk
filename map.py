@@ -80,8 +80,8 @@ class ConvertedMap(ComplexMap):
         territory_colours = simplemap.get_territories()
         inv_territory_colours = dict([(v,k) for (k,v) in territory_colours.items()])
         for fillpass in range(3):
-            for x in xrange(self.image.size[0]):
-                for y in xrange(self.image.size[1]):
+            for y in xrange(self.image.size[1]):
+                for x in xrange(self.image.size[0]):
                     colour = simplemap.image.getpixel((x,y))
                     if fillpass == 1 and colour in territory_colours.values():
                         tid = inv_territory_colours[colour] * 100
