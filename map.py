@@ -39,8 +39,9 @@ class ComplexMap(object):
     def __init__(self, filename):
         self.image = Image.open(open(filename, "rb"))
 
-    def convert_to_dat(self):
-        raw_map = StringIO()
+    def convert_to_dat(self, raw_map = None):
+        if raw_map is None:
+            raw_map = StringIO()
         width,height = self.image.size
         raw_map.write("%d,%d\n" % (width, height))
         for y in range(height):
@@ -73,47 +74,51 @@ class ConvertedMap(ComplexMap):
     
     def __init__(self, simplemap):
         self.image = Image.new('RGB', simplemap.image.size)
+        ImageDraw.floodfill(self.image, (0,0), (255,255,255))
         self.territories = set()
         draw = ImageDraw.Draw(self.image)
         territory_colours = simplemap.get_territories()
         inv_territory_colours = dict([(v,k) for (k,v) in territory_colours.items()])
-        for x in xrange(self.image.size[0]):
-            for y in xrange(self.image.size[1]):
-                colour = simplemap.image.getpixel((x,y))
-                if colour in territory_colours.values():
-                    tid = inv_territory_colours[colour] * 100
-                    n_x, n_y = x, y
-                    neighbours = [(x+1,y), (x,y+1), (x-1,y), (x,y-1)]
-                    neighbours = [(x if x > 0 else self.image.size[0] - 1, y) for (x, y) in neighbours]
-                    neighbours = [(x if x < self.image.size[0] else 0, y) for (x, y) in neighbours]
-                    neighbours = [(x, y if y > 0 else self.image.size[1] - 1) for (x, y) in neighbours]
-                    neighbours = [(x, y if y < self.image.size[1] else 0) for (x, y) in neighbours]
-                    neighbours = set(self.image.getpixel(neighbour) for neighbour in neighbours)
-                    neighbours = set(colour for colour in neighbours if colour[2] < 255 and colour != (0,0,0) and colour != (255,0,0))
-                    if neighbours:
-                        colour = max(neighbours)
-                        tid = colour_to_territory_id(colour)
-                    else:
+        for fillpass in range(3):
+            for x in xrange(self.image.size[0]):
+                for y in xrange(self.image.size[1]):
+                    colour = simplemap.image.getpixel((x,y))
+                    if fillpass == 1 and colour in territory_colours.values():
                         tid = inv_territory_colours[colour] * 100
-                        # generate a new tid
-                        tid += 1
-                        while (tid in self.territories):
+                        n_x, n_y = x, y
+                        neighbours = [(x+1,y), (x,y+1), (x-1,y), (x,y-1)]
+                        neighbours = [(x if x > 0 else self.image.size[0] - 1, y) for (x, y) in neighbours]
+                        neighbours = [(x if x < self.image.size[0] else 0, y) for (x, y) in neighbours]
+                        neighbours = [(x, y if y > 0 else self.image.size[1] - 1) for (x, y) in neighbours]
+                        neighbours = [(x, y if y < self.image.size[1] else 0) for (x, y) in neighbours]
+                        neighbours = set(self.image.getpixel(neighbour) for neighbour in neighbours)
+                        neighbours = set(colour for colour in neighbours if colour[2] < 255 and colour != (0,0,0) and colour != (255,0,0))
+                        if neighbours:
+                            colour = max(neighbours)
+                            tid = colour_to_territory_id(colour)
+                        else:
+                            tid = inv_territory_colours[colour] * 100
+                            # generate a new tid
                             tid += 1
-                        self.territories.add(tid)
-                        colour = territory_id_to_colour(tid)
-                    x, y = n_x, n_y
-                    draw.point((x,y), colour)
-                elif colour == (255, 255, 255):
-                    """if x < self.image.size[0]-1:
-                        next_pixel = simplemap.image.getpixel((x+1,y))
-                        if next_pixel in territory_colours.values():
-                            # We're not in the sea
-                            tid = inv_territory_colours[next_pixel] * 100
-                            draw.point((x,y), territory_id_to_colour(tid, is_marker=True))
-                            continue"""
-                    draw.point((x,y), colour)
-                elif colour in set([(0, 0, 0), (255, 0, 0)]):
-                    draw.point((x,y), colour)
+                            while (tid in self.territories):
+                                tid += 1
+                            self.territories.add(tid)
+                            colour = territory_id_to_colour(tid)
+                        x, y = n_x, n_y
+                        ImageDraw.floodfill(self.image, (x,y), colour)
+                    elif colour == (255, 255, 255):
+                        if x < self.image.size[0]-1:
+                            next_pixel = simplemap.image.getpixel((x+1,y))
+                            if fillpass == 2 and (next_pixel in territory_colours.values()):
+                                # We're not in the sea
+                                tid = inv_territory_colours[next_pixel] * 100
+                                draw.point((x,y), territory_id_to_colour(tid, is_marker=True))
+                                continue
+                        draw.point((x,y), colour)
+                    elif colour in set([(0, 0, 0), (255, 0, 0)]):
+                        draw.point((x,y), colour)
 
 if __name__ == '__main__':
-    print dict(SimpleMap("/Users/matthewwilkes/Desktop/mars.bmp").get_territories())
+    import sys
+    with sys.open(sys.argv[2], "wb") as out:
+        ConvertedMap(SimpleMap(sys.argv[1])).convert_to_dat(raw_map = out)
