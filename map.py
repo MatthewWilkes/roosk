@@ -22,13 +22,13 @@ def out():
     im.show()
 
 def territory_id_to_colour(tid, is_marker=False):
-    colour = [130, 120, 0]
+    colour = [128, 128, 0]
     if is_marker:
         # this is where we print the id
         colour[2] = 255
     tid = str(tid)
-    colour[0] += int(tid[0]) * 10
-    colour[1] += int(tid[2]) * 20
+    colour[0] += (int(tid[0])-1) * 20
+    colour[1] += int(tid[2]) * 10
     return tuple(colour)
 
 def colour_to_territory_id(colour):
