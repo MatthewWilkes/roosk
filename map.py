@@ -120,5 +120,5 @@ class ConvertedMap(ComplexMap):
 
 if __name__ == '__main__':
     import sys
-    with sys.open(sys.argv[2], "wb") as out:
+    with open(sys.argv[2], "wb") as out:
         ConvertedMap(SimpleMap(sys.argv[1])).convert_to_dat(raw_map = out)
