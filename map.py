@@ -73,6 +73,7 @@ class ConvertedMap(ComplexMap):
     
     def __init__(self, simplemap):
         self.image = Image.new('RGB', simplemap.image.size)
+        self.territories = set()
         draw = ImageDraw.Draw(self.image)
         territory_colours = simplemap.get_territories()
         inv_territory_colours = dict([(v,k) for (k,v) in territory_colours.items()])
@@ -81,15 +82,35 @@ class ConvertedMap(ComplexMap):
                 colour = simplemap.image.getpixel((x,y))
                 if colour in territory_colours.values():
                     tid = inv_territory_colours[colour] * 100
-                    draw.point((x,y), territory_id_to_colour(tid))
+                    n_x, n_y = x, y
+                    neighbours = [(x+1,y), (x,y+1), (x-1,y), (x,y-1)]
+                    neighbours = [(x if x > 0 else self.image.size[0] - 1, y) for (x, y) in neighbours]
+                    neighbours = [(x if x < self.image.size[0] else 0, y) for (x, y) in neighbours]
+                    neighbours = [(x, y if y > 0 else self.image.size[1] - 1) for (x, y) in neighbours]
+                    neighbours = [(x, y if y < self.image.size[1] else 0) for (x, y) in neighbours]
+                    neighbours = set(self.image.getpixel(neighbour) for neighbour in neighbours)
+                    neighbours = set(colour for colour in neighbours if colour[2] < 255 and colour != (0,0,0) and colour != (255,0,0))
+                    if neighbours:
+                        colour = max(neighbours)
+                        tid = colour_to_territory_id(colour)
+                    else:
+                        tid = inv_territory_colours[colour] * 100
+                        # generate a new tid
+                        tid += 1
+                        while (tid in self.territories):
+                            tid += 1
+                        self.territories.add(tid)
+                        colour = territory_id_to_colour(tid)
+                    x, y = n_x, n_y
+                    draw.point((x,y), colour)
                 elif colour == (255, 255, 255):
-                    if x < self.image.size[0]-1:
+                    """if x < self.image.size[0]-1:
                         next_pixel = simplemap.image.getpixel((x+1,y))
                         if next_pixel in territory_colours.values():
                             # We're not in the sea
                             tid = inv_territory_colours[next_pixel] * 100
                             draw.point((x,y), territory_id_to_colour(tid, is_marker=True))
-                            continue
+                            continue"""
                     draw.point((x,y), colour)
                 elif colour in set([(0, 0, 0), (255, 0, 0)]):
                     draw.point((x,y), colour)
