@@ -151,6 +151,10 @@ class ConvertedMap(ComplexMap):
                     elif colour in set([(0, 0, 0), (255, 0, 0)]):
                         draw.point((x,y), colour)
     
+    def get_territories_in_region(self, tid):
+        """ Give me 100 to get 100,101,102,103,104 etc"""
+        return [a for a in self.territories if a < tid+100 and a>= tid]
+    
     def generate_bonuses(self):
         regions = {}
         for y in xrange(self.image.size[1]):
@@ -162,14 +166,21 @@ class ConvertedMap(ComplexMap):
         
         def bonus_amount(region, all_regions):
             percent = all_regions[region]/float(sum(all_regions.values()))
-            armies = percent * 50
-            if armies < 3:
-                armies = 3
+            armies = percent * 30
+            if armies < 2:
+                armies = 2
             return int(armies)
-            
-        return dict((tid, bonus_amount(tid, regions)) for tid in regions.keys())
+        
+        # I'm sorry...
+        return [(self.get_territories_in_region(tid), bonus_amount(tid, regions)) for tid in regions.keys()]
 
 if __name__ == '__main__':
     import sys
     with open(sys.argv[2], "wb") as out:
-        ConvertedMap(SimpleMap(sys.argv[1])).convert_to_dat(raw_map = out)
+        newmap = ConvertedMap(SimpleMap(sys.argv[1]))
+        newmap.convert_to_dat(raw_map = out)
+        print "Bonuses:"
+        print newmap.generate_bonuses()
+        print
+        print "Adjacency:"
+        print newmap.generate_adjacency()
