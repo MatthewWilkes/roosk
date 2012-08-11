@@ -74,11 +74,12 @@ class ConvertedMap(ComplexMap):
     
     def __init__(self, simplemap):
         self.image = Image.new('RGB', simplemap.image.size)
+        self.simple = simplemap
         ImageDraw.floodfill(self.image, (0,0), (255,255,255))
         self.territories = set()
         draw = ImageDraw.Draw(self.image)
-        territory_colours = simplemap.get_territories()
-        inv_territory_colours = dict([(v,k) for (k,v) in territory_colours.items()])
+        self.territory_colours = territory_colours = simplemap.get_territories()
+        self.inv_territory_colours = inv_territory_colours = dict([(v,k) for (k,v) in territory_colours.items()])
         for fillpass in range(3):
             for y in xrange(self.image.size[1]):
                 for x in xrange(self.image.size[0]):
@@ -117,6 +118,25 @@ class ConvertedMap(ComplexMap):
                         draw.point((x,y), colour)
                     elif colour in set([(0, 0, 0), (255, 0, 0)]):
                         draw.point((x,y), colour)
+    
+    def generate_bonuses(self):
+        regions = {}
+        for y in xrange(self.image.size[1]):
+            for x in xrange(self.image.size[0]):
+                colour = self.simple.image.getpixel((x,y))
+                if colour in self.territory_colours.values():
+                    tid = self.inv_territory_colours[colour] * 100
+                    regions[tid] = regions.get(tid, 0) + 1
+        
+        def bonus_amount(region, all_regions):
+            percent = all_regions[region]/float(sum(all_regions.values()))
+            armies = percent * 50
+            if armies < 3:
+                armies = 3
+            return int(armies)
+            
+        return dict((tid, bonus_amount(tid, regions)) for tid in regions.keys())
+    
 
 if __name__ == '__main__':
     import sys
