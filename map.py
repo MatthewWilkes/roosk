@@ -38,6 +38,38 @@ class ComplexMap(object):
     
     def __init__(self, filename):
         self.image = Image.open(open(filename, "rb"))
+    
+    def generate_adjacency(self):
+        self.adjacency = {}
+        for y in xrange(self.image.size[1]):
+            for x in xrange(self.image.size[0]):
+                colour = self.image.getpixel((x,y))
+                if colour in ((0,0,0), (255,255,255), (255,0,0)):
+                    continue
+                try:
+                    two_across = self.image.getpixel((x+2,y))
+                    if two_across in ((0,0,0), (255,255,255), (255,0,0)):
+                        continue
+                    me = colour_to_territory_id(colour)
+                    neighbour = colour_to_territory_id(two_across)
+                    if me != neighbour:
+                        self.adjacency[me] = self.adjacency.get(me, []) + [neighbour, ]
+                        self.adjacency[neighbour] = self.adjacency.get(neighbour, []) + [me, ] 
+                except:
+                    pass
+                try:
+                    two_down = self.image.getpixel((x,y+2))
+                    if two_down in ((0,0,0), (255,255,255), (255,0,0)):
+                        continue
+                    me = colour_to_territory_id(colour)
+                    neighbour = colour_to_territory_id(two_down)
+                    if me != neighbour:
+                        self.adjacency[me] = self.adjacency.get(me, []) + [neighbour, ]
+                        self.adjacency[neighbour] = self.adjacency.get(neighbour, []) + [me, ] 
+                except:
+                    two_down = None
+        self.adjacency = dict((k,set(v)) for (k,v) in self.adjacency.items())
+        return self.adjacency
 
     def convert_to_dat(self, raw_map = None):
         if raw_map is None:
@@ -136,7 +168,6 @@ class ConvertedMap(ComplexMap):
             return int(armies)
             
         return dict((tid, bonus_amount(tid, regions)) for tid in regions.keys())
-    
 
 if __name__ == '__main__':
     import sys
