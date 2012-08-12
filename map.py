@@ -47,7 +47,13 @@ class ComplexMap(object):
                 if colour in ((0,0,0), (255,255,255), (255,0,0)):
                     continue
                 try:
-                    two_across = self.image.getpixel((x+2,y))
+                    two_across = self.image.getpixel((x+1,y))
+                    n = x+1
+                    while two_across in ((255,0,0), (0,0,0)):
+                        n += 1
+                        if n > self.image.size[0]:
+                            n = 0
+                        two_across = self.image.getpixel((n,y))
                     if two_across in ((0,0,0), (255,255,255), (255,0,0)):
                         continue
                     me = colour_to_territory_id(colour)
@@ -58,7 +64,13 @@ class ComplexMap(object):
                 except:
                     pass
                 try:
-                    two_down = self.image.getpixel((x,y+2))
+                    two_down = self.image.getpixel((x,y+1))
+                    n = y+1
+                    while two_down in ((255,0,0), (0,0,0)):
+                        n += 1
+                        if n > self.image.size[1]:
+                            n = 0
+                        two_down = self.image.getpixel((x,n))
                     if two_down in ((0,0,0), (255,255,255), (255,0,0)):
                         continue
                     me = colour_to_territory_id(colour)
